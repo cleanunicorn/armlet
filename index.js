@@ -2,6 +2,7 @@ const url = require('url')
 
 const requester = require('./lib/requester')
 const simpleRequester = require('./lib/simpleRequester')
+const simpleAuthRequester = require('./lib/simpleAuthRequester')
 const poller = require('./lib/poller')
 
 const defaultApiUrl = process.env['MYTHRIL_API_URL'] || 'https://api.mythril.ai'
@@ -46,6 +47,36 @@ class Client {
           reject(err)
         })
     })
+  }
+
+  analyzeSubmit (options) {
+    return new Promise((resolve, reject) => {
+      if (options === undefined || options.data === undefined || options.data.deployedBytecode === undefined) {
+        throw new TypeError('Please provide a deployedBytecode option.')
+      }
+
+      requester.do(options, this.apiKey, this.apiUrl)
+        .then(uuid => {
+          return poller.do(uuid, this.apiKey, this.apiUrl, undefined, options.timeout)
+        }).then(issues => {
+          resolve(issues)
+        }).catch(err => {
+          reject(err)
+        })
+    })
+  }
+
+  listAnalyses (queryString) {
+    let url = `${this.apiUrl.href}${defaultApiVersion}/analyses`
+    if (queryString) {
+      url += `?${queryString}`
+    }
+    const options = {
+      url: url,
+      json: true,
+      apiKey: this.apiKey
+    }
+    return simpleAuthRequester.do(options)
   }
 }
 
