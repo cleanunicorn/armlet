@@ -45,8 +45,10 @@ describe('main module', () => {
         })
 
         describe('should have a constructor which should', () => {
-          it('require an auth option', () => {
-            (() => new Client()).should.throw(TypeError)
+          it('initialize with trial userId', () => {
+            const instance = new Client()
+
+            instance.userId.should.be.deep.equal(armlet.trialUserId)
           })
 
           it('require a password auth option if email is provided', () => {
@@ -59,6 +61,10 @@ describe('main module', () => {
 
           it('require a password auth option if userId is provided', () => {
             (() => new Client({ userId })).should.throw(TypeError)
+          })
+
+          it('does not require a password auth option if userId is trialUserId', () => {
+            (() => new Client({ userId: armlet.trialUserId })).should.not.throw(TypeError)
           })
 
           it('require an user id auth option', () => {
