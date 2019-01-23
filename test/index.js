@@ -67,6 +67,12 @@ describe('main module', () => {
             (() => new Client({ userId: armlet.trialUserId })).should.not.throw(TypeError)
           })
 
+          it('initialize with trialUserId when neither user id nor password auth options are provided', () => {
+            const instance = new Client({ })
+
+            instance.userId.should.be.deep.equal(armlet.trialUserId)
+          })
+
           it('require an user id auth option', () => {
             (() => new Client({ password })).should.throw(TypeError)
           })

@@ -14,9 +14,14 @@ class Client {
   constructor (auth, inputApiUrl = defaultApiUrl) {
     const authParams = typeof auth === 'object' ? { ...auth } : { userId: trialUserId }
 
-    const { email, ethAddress, apiKey, password, userId } = authParams
+    const { email, ethAddress, apiKey, password } = authParams
+    let { userId } = authParams
 
-    if (!email && !ethAddress && !apiKey && !userId) {
+    if (!password && !email && !ethAddress && !apiKey && !userId) {
+      userId = trialUserId
+    }
+
+    if (password && !email && !ethAddress && !apiKey && !userId) {
       throw new TypeError('Please provide an user id auth option.')
     }
 
