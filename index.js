@@ -115,38 +115,25 @@ minimum value for how long a non-cached analyses will take
 
     const uuid = requestResponse.uuid
     const timeout = options.timeout
-    let initialTimeout
-
-    // debug -
-    // console.log(`now: ${Math.trunc(Date.now() / 1000)}`)
-
-    // FIXME: this might not be optimal. The test should be negated
-    // and then do the *only* subset of poller that needs to be done,
-    // given that we know this is finished. Instead, I think we'll
-    // make one more additional request of status only to find out
-    // that it is still finished.
-    if (requestResponse.status !== 'Finished') {
-      // Compute the initial delay as the larger of the default value
-      // and what is passed in.
-      const initialDelay = Math.max(options.initialDelay || 0, defaultInitialDelay)
-      initialTimeout = timeout - initialDelay
-      await util.timer(initialDelay)
-    }
 
     let result
-    try {
-      result = await poller.do(uuid, this.accessToken, this.apiUrl, timeout, initialTimeout)
-    } catch (e) {
-      if (e.statusCode !== 401) {
-        throw e
+    if (requestResponse.status === 'Finished') {
+      result = poller.getIssues(uuid, this.accessToken, this.apiUrl)
+    } else {
+      const initialDelay = Math.max(options.initialDelay || 0, defaultInitialDelay)
+      try {
+        result = await poller.do(uuid, this.accessToken, this.apiUrl, timeout, initialDelay)
+      } catch (e) {
+        if (e.statusCode !== 401) {
+          throw e
+        }
+        const tokens = await refresh.do(this.accessToken, this.refreshToken, this.apiUrl)
+        this.accessToken = tokens.access
+        this.refreshToken = tokens.refresh
+        result = await poller.do(uuid, this.accessToken, this.apiUrl, timeout, initialDelay)
       }
-      const tokens = await refresh.do(this.accessToken, this.refreshToken, this.apiUrl)
-      this.accessToken = tokens.access
-      this.refreshToken = tokens.refresh
-
-      result = await poller.do(uuid, this.accessToken, this.apiUrl, timeout, initialTimeout)
+      result.uuid = uuid
     }
-    result.uuid = uuid
     return result
   }
 
